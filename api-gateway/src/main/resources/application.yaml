@@ -10,7 +10,7 @@ spring:
         locator:
           enabled: true
           lower-case-service-id: true
-      routes: []  # Sau này thêm route cụ thể nếu cần override
+      routes: []
 
 eureka:
   client:
@@ -21,4 +21,4 @@ eureka:
 
 logging:
   level:
-    org.springframework.cloud.gateway: DEBUG  # Để debug route
+    org.springframework.cloud.gateway: DEBUG
