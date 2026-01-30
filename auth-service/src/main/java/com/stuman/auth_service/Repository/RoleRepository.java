@@ -1,4 +1,4 @@
-package com.stuman.auth_service.Repository;
+package com.stuman.auth_service.repository;
 
 import com.stuman.auth_service.entity.Role;
 import com.stuman.auth_service.entity.RoleName;
