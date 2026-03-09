@@ -1,40 +1,75 @@
 package com.stuman.auth_service.exception;
-
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.time.LocalDateTime;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ApiError> handleBusinessException(
-            BusinessException ex,
+    @ExceptionHandler(BaseException.class)
+    public ResponseEntity<ErrorResponse> handleBaseException(
+            BaseException ex,
             HttpServletRequest request
     ) {
-        ApiError error = new ApiError(
-                ex.getStatus().value(),
-                ex.getStatus().getReasonPhrase(),
-                ex.getMessage(),
-                request.getRequestURI()
+
+        ErrorCode errorCode = ex.getErrorCode();
+
+        ErrorResponse response = new ErrorResponse(
+                errorCode.getCode(),
+                errorCode.getMessage(),
+                request.getRequestURI(),
+                LocalDateTime.now()
         );
-        return ResponseEntity.status(ex.getStatus()).body(error);
+
+        return ResponseEntity
+                .status(errorCode.getStatus())
+                .body(response);
     }
 
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidationException(
+            MethodArgumentNotValidException ex,
+            HttpServletRequest request
+    ) {
+
+        String message = ex.getBindingResult()
+                .getFieldError()
+                .getDefaultMessage();
+
+        ErrorResponse response = new ErrorResponse(
+                ErrorCode.VALIDATION_ERROR.getCode(),
+                message,
+                request.getRequestURI(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity
+                .status(ErrorCode.VALIDATION_ERROR.getStatus())
+                .body(response);
+    }
+
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> handleUnexpected(
+    public ResponseEntity<ErrorResponse> handleUnexpectedException(
             Exception ex,
             HttpServletRequest request
     ) {
-        ApiError error = new ApiError(
-                500,
-                "Internal Server Error",
-                "Unexpected error occurred",
-                request.getRequestURI()
+
+        ErrorResponse response = new ErrorResponse(
+                ErrorCode.INTERNAL_ERROR.getCode(),
+                ErrorCode.INTERNAL_ERROR.getMessage(),
+                request.getRequestURI(),
+                LocalDateTime.now()
         );
-        return ResponseEntity.internalServerError().body(error);
+
+        return ResponseEntity
+                .status(ErrorCode.INTERNAL_ERROR.getStatus())
+                .body(response);
     }
 }
 

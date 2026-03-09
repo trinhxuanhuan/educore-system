@@ -1,5 +1,9 @@
 package com.stuman.auth_service.security;
 
+import com.stuman.auth_service.entity.User;
+import com.stuman.auth_service.exception.BaseException;
+import com.stuman.auth_service.exception.ErrorCode;
+import com.stuman.auth_service.repository.UserRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,40 +19,55 @@ import java.util.stream.Collectors;
 @Component
 public class JwtProvider {
 
+    private final UserRepository userRepository;
+
     @Value("${security.jwt.secret}")
     private String jwtSecret;
 
     @Value("${security.jwt.expiration}")
     private long jwtExpirationMs;
 
-    // CORE
+    public JwtProvider(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    // ================= CORE =================
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 
-    // GENERATE TOKEN
+    // ================= GENERATE TOKEN =================
 
     public String generateToken(Authentication authentication) {
 
         org.springframework.security.core.userdetails.User principal =
                 (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
 
+        // 🔥 LẤY USER TỪ DB → LẤY ID
+        User user = userRepository.findByUsername(principal.getUsername())
+                .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
+
+        // Roles
         List<String> roles = principal.getAuthorities()
                 .stream()
                 .map(GrantedAuthority::getAuthority)
+                .map(role -> role.replace("ROLE_", ""))
                 .collect(Collectors.toList());
 
         return Jwts.builder()
-                .setSubject(principal.getUsername())
+                .setSubject(user.getUsername())
                 .claim(JwtConstants.ROLES, roles)
+                .claim(JwtConstants.USER_ID, user.getId())   // ⭐ QUAN TRỌNG NHẤT
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
+                .setExpiration(
+                        new Date(System.currentTimeMillis() + jwtExpirationMs)
+                )
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    //PARSE
+    // ================= PARSE =================
 
     private Claims getClaims(String token) {
         return Jwts.parserBuilder()
@@ -66,7 +85,11 @@ public class JwtProvider {
         return getClaims(token).get(JwtConstants.ROLES, List.class);
     }
 
-    // VALIDATE
+    public Long getUserIdFromToken(String token) {
+        return getClaims(token).get(JwtConstants.USER_ID, Long.class);
+    }
+
+    // ================= VALIDATE =================
 
     public boolean validateToken(String token) {
         try {

@@ -1,0 +1,46 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: grade-service
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/grade_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+security:
+  jwt:
+    secret: thisIsASuperLongAndSecureSecretKeyForJWT2026
+    token-prefix: Bearer
+    header: Authorization
+
+logging:
+  level:
+    root: INFO
+    org.springframework.security: INFO

@@ -4,21 +4,39 @@ server:
 spring:
   application:
     name: api-gateway
+
   cloud:
     gateway:
-      discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: true
-      routes: []
+      routes:
+
+        - id: auth-api
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/v1/auth/**
+
+        - id: user-api
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/v1/users/**
+
+        - id: student-api
+          uri: lb://student-service
+          predicates:
+            - Path=/api/v1/students/**
+        - id: grade-api
+          uri: lb://grade-service
+          predicates:
+            - Path=/api/v1/grades/**
+        - id: subject-api
+          uri: lb://grade-service
+          predicates:
+            - Path=/api/v1/subjects/**
+        - id: assignment-api
+          uri: lb://grade-service
+          predicates:
+            - Path=/api/v1/assignments/**
 
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
-    register-with-eureka: true
-    fetch-registry: true
-
-logging:
-  level:
-    org.springframework.cloud.gateway: DEBUG

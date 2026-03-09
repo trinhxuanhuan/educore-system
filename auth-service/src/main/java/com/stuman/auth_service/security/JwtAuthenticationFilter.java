@@ -5,27 +5,39 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
+    private final UserDetailsService userDetailsService;
 
-    public JwtAuthenticationFilter(JwtProvider jwtProvider) {
+    public JwtAuthenticationFilter(
+            JwtProvider jwtProvider,
+            UserDetailsService userDetailsService
+    ) {
         this.jwtProvider = jwtProvider;
+        this.userDetailsService = userDetailsService;
+    }
+
+    /**
+     * Bỏ qua JWT filter cho các API public & internal
+     */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        String method = request.getMethod();
+
+        return (path.equals("/api/v1/auth/login") && method.equals("POST"))
+                || (path.equals("/api/v1/auth/register") && method.equals("POST"));
     }
 
     @Override
@@ -35,41 +47,46 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        String token = getJwtFromRequest(request);
+        String bearer = request.getHeader("Authorization");
 
-        if (token != null && jwtProvider.validateToken(token)) {
+        //Không có token → cho đi tiếp
+        if (bearer == null || !bearer.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-            String username = jwtProvider.getUsernameFromToken(token);
-            List<String> roles = jwtProvider.getRolesFromToken(token);
+        String token = bearer.substring(7);
 
-            List<GrantedAuthority> authorities = roles.stream()
-                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                    .collect(Collectors.toList());
+        //Token không hợp lệ → cho đi tiếp (Security sẽ chặn sau)
+        if (!jwtProvider.validateToken(token)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String username = jwtProvider.getUsernameFromToken(token);
+
+        //Tránh set authentication nhiều lần
+        if (username != null &&
+                SecurityContextHolder.getContext().getAuthentication() == null) {
+
+            UserDetails userDetails =
+                    userDetailsService.loadUserByUsername(username);
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
-                            username,
+                            userDetails,
                             null,
-                            authorities
+                            userDetails.getAuthorities()
                     );
 
             authentication.setDetails(
                     new WebAuthenticationDetailsSource().buildDetails(request)
             );
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-        } else {
-            SecurityContextHolder.clearContext();
+            SecurityContextHolder.getContext()
+                    .setAuthentication(authentication);
         }
 
         filterChain.doFilter(request, response);
     }
-
-    private String getJwtFromRequest(HttpServletRequest request) {
-        String bearer = request.getHeader("Authorization");
-        return (bearer != null && bearer.startsWith("Bearer "))
-                ? bearer.substring(7)
-                : null;
-    }
 }
-

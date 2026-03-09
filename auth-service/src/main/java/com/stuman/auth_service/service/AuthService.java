@@ -1,5 +1,7 @@
 package com.stuman.auth_service.service;
 
+import com.stuman.auth_service.exception.BaseException;
+import com.stuman.auth_service.exception.ErrorCode;
 import com.stuman.auth_service.dto.request.LoginRequest;
 import com.stuman.auth_service.dto.request.RegisterRequest;
 import com.stuman.auth_service.dto.response.AuthResponse;
@@ -7,9 +9,6 @@ import com.stuman.auth_service.dto.response.UserInfoResponse;
 import com.stuman.auth_service.entity.Role;
 import com.stuman.auth_service.entity.RoleName;
 import com.stuman.auth_service.entity.User;
-import com.stuman.auth_service.exception.RoleNotFoundException;
-import com.stuman.auth_service.exception.UserAlreadyExistsException;
-import com.stuman.auth_service.exception.UserNotFoundException;
 import com.stuman.auth_service.repository.RoleRepository;
 import com.stuman.auth_service.repository.UserRepository;
 import com.stuman.auth_service.security.JwtProvider;
@@ -27,15 +26,19 @@ import java.util.stream.Collectors;
 
 @Service
 public class AuthService {
+
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtProvider jwtProvider;
 
-    public AuthService(UserRepository userRepository, RoleRepository roleRepository,
-                      PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager,
-                       JwtProvider jwtProvider){
+    public AuthService(UserRepository userRepository,
+                       RoleRepository roleRepository,
+                       PasswordEncoder passwordEncoder,
+                       AuthenticationManager authenticationManager,
+                       JwtProvider jwtProvider) {
+
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
@@ -43,37 +46,43 @@ public class AuthService {
         this.jwtProvider = jwtProvider;
     }
 
-    public AuthResponse register(RegisterRequest request){
-        //Check tồn tại username và email
+    public AuthResponse register(RegisterRequest request) {
+
+        // Check tồn tại username
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new UserAlreadyExistsException("Username already exists");
-        }
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new UserAlreadyExistsException("Email already exists");
+            throw new BaseException(ErrorCode.USER_ALREADY_EXISTS);
         }
 
-        //Tạo user mới
+        // Check tồn tại email
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new BaseException(ErrorCode.USER_ALREADY_EXISTS);
+        }
+
+        // Tạo user mới
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        //Assign role mặc định: STUDENT
+        // Assign role mặc định: STUDENT
         Optional<Role> studentRole = roleRepository.findByName(RoleName.STUDENT);
+
         if (studentRole.isEmpty()) {
-            throw new RoleNotFoundException("Role STUDENT not found");
+            throw new BaseException(ErrorCode.ROLE_NOT_FOUND);
         }
 
         Set<Role> roles = new HashSet<>();
         roles.add(studentRole.get());
+
         user.setRoles(roles);
 
         userRepository.save(user);
 
-        //Login ngay sau Register để trả token
+        // Login ngay sau register
         return login(new LoginRequest(request.getUsername(), request.getPassword()));
+    }
 
-}
+
     public AuthResponse login(LoginRequest request) {
 
         Authentication authentication = authenticationManager.authenticate(
@@ -88,7 +97,7 @@ public class AuthService {
         String jwt = jwtProvider.generateToken(authentication);
 
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new UserNotFoundException(request.getUsername()));
+                .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
         Set<String> roles = user.getRoles()
                 .stream()
