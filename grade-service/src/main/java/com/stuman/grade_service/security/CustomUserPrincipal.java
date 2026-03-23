@@ -23,6 +23,14 @@ public class CustomUserPrincipal implements UserDetails {
                 .toList();
     }
 
+    public boolean isAdmin() {
+        return roles.contains("ADMIN");
+    }
+
+    public boolean isTeacher() {
+        return roles.contains("TEACHER");
+    }
+
     @Override
     public String getPassword() { return null; }
 

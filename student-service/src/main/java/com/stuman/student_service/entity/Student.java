@@ -3,13 +3,10 @@ import com.stuman.student_service.entity.Gender;
 import com.stuman.student_service.entity.StudentStatus;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDate;
-
 @Entity
 @Table(name = "students")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -43,8 +40,8 @@ public class Student {
     private String className;
 
     @Enumerated(EnumType.STRING)
-    private StudentStatus status;
+    @Builder.Default
+    private StudentStatus status = StudentStatus.ACTIVE;
 
     private String note;
 }
-

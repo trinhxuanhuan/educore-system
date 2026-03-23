@@ -44,7 +44,7 @@ public class JwtProvider {
         org.springframework.security.core.userdetails.User principal =
                 (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
 
-        // 🔥 LẤY USER TỪ DB → LẤY ID
+        //LẤY USER TỪ DB → LẤY ID
         User user = userRepository.findByUsername(principal.getUsername())
                 .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 

@@ -1,14 +1,18 @@
 package com.stuman.grade_service.service.impl;
 
+import com.stuman.common_event.GradeCreatedEvent;
 import com.stuman.grade_service.dto.request.CreateGradeRequest;
 import com.stuman.grade_service.dto.request.UpdateGradeRequest;
-import com.stuman.grade_service.dto.response.GpaResponse;
 import com.stuman.grade_service.dto.response.GradeResponse;
 import com.stuman.grade_service.entity.Grade;
 import com.stuman.grade_service.entity.Semester;
+import com.stuman.grade_service.entity.Subject;
 import com.stuman.grade_service.exception.BaseException;
 import com.stuman.grade_service.exception.ErrorCode;
+import com.stuman.grade_service.integration.feign.StudentClient;
+import com.stuman.grade_service.integration.kafka.GradeKafkaProducer;
 import com.stuman.grade_service.repository.GradeRepository;
+import com.stuman.grade_service.repository.SubjectRepository;
 import com.stuman.grade_service.repository.TeachingAssignmentRepository;
 import com.stuman.grade_service.service.GradeService;
 import jakarta.persistence.criteria.Predicate;
@@ -28,11 +32,11 @@ public class GradeServiceImpl implements GradeService {
 
     private final GradeRepository gradeRepository;
     private final TeachingAssignmentRepository assignmentRepository;
+    private final SubjectRepository subjectRepository;
+    private final StudentClient studentClient;
+    private final GradeKafkaProducer kafkaProducer;
 
-    // ======================================================
-    // ================= TEACHER ============================
-    // ======================================================
-
+    // ================= CREATE ===================
     @Override
     @Transactional
     public GradeResponse createGrade(CreateGradeRequest request, Long teacherId) {
@@ -51,11 +55,15 @@ public class GradeServiceImpl implements GradeService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        gradeRepository.save(grade);
+        Grade saved = gradeRepository.save(grade);
 
-        return mapToResponse(grade);
+        //SEND KAFKA
+        sendKafkaEvent(saved);
+
+        return mapToResponse(saved);
     }
 
+    // ================= UPDATE ===================
     @Override
     @Transactional
     public GradeResponse updateGrade(Long gradeId,
@@ -83,8 +91,15 @@ public class GradeServiceImpl implements GradeService {
         grade.setUpdatedBy(teacherId);
         grade.setUpdatedAt(LocalDateTime.now());
 
-        return mapToResponse(gradeRepository.save(grade));
+        Grade saved = gradeRepository.save(grade);
+
+        //SEND KAFKA (UPSERT)
+        sendKafkaEvent(saved);
+
+        return mapToResponse(saved);
     }
+
+    // ================= GET ===================
 
     @Override
     public Page<GradeResponse> getGradesForTeacher(
@@ -96,7 +111,6 @@ public class GradeServiceImpl implements GradeService {
             int size,
             Long teacherId) {
 
-        // Teacher chỉ được xem subject mình dạy
         Set<Long> assignedSubjects = getAssignedSubjects(teacherId);
 
         if (assignedSubjects.isEmpty()) {
@@ -104,43 +118,27 @@ public class GradeServiceImpl implements GradeService {
         }
 
         return getFilteredGrades(
-                studentId,
-                semester,
-                academicYear,
-                subjectId,
-                assignedSubjects,
-                page,
-                size
+                studentId, semester, academicYear,
+                subjectId, assignedSubjects, page, size
         );
     }
 
-    // ======================================================
-    // ================= STUDENT ============================
-    // ======================================================
-
     @Override
     public Page<GradeResponse> getGradesByStudent(
-            Long studentId,
+            Long userId,
             Semester semester,
             Integer academicYear,
             Long subjectId,
             int page,
             int size) {
 
+        Long studentId = studentClient.getStudentByUserId(userId).getId();
+
         return getFilteredGrades(
-                studentId,
-                semester,
-                academicYear,
-                subjectId,
-                null,
-                page,
-                size
+                studentId, semester, academicYear,
+                subjectId, null, page, size
         );
     }
-
-    // ======================================================
-    // ================= ADMIN ==============================
-    // ======================================================
 
     @Override
     public Page<GradeResponse> getAllGrades(
@@ -152,62 +150,30 @@ public class GradeServiceImpl implements GradeService {
             int size) {
 
         return getFilteredGrades(
-                studentId,
-                semester,
-                academicYear,
-                subjectId,
-                null,
-                page,
-                size
+                studentId, semester, academicYear,
+                subjectId, null, page, size
         );
     }
 
-    // ======================================================
-    // ================= GPA ================================
-    // ======================================================
+    // ================= PRIVATE ===================
 
-    @Override
-    public GpaResponse calculateGpa(Long studentId,
-                                    Semester semester,
-                                    Integer academicYear) {
+    private void sendKafkaEvent(Grade grade) {
 
-        List<Grade> grades =
-                gradeRepository.findByStudentIdAndSemesterAndAcademicYear(
-                        studentId, semester, academicYear);
+        GradeCreatedEvent event =
+                GradeCreatedEvent.builder()
+                        .gradeId(grade.getId())
+                        .studentId(grade.getStudentId())
+                        .subjectId(grade.getSubjectId())
+                        .type(grade.getType().name())
+                        .score(grade.getScore())
+                        .weight(grade.getWeight())
+                        .credit(getCredit(grade.getSubjectId()))
+                        .semester(grade.getSemester().name())
+                        .academicYear(grade.getAcademicYear())
+                        .build();
 
-        double gpa = calculateWeightedGpa(grades);
-
-        return buildGpaResponse(studentId, semester, academicYear, gpa);
+        kafkaProducer.sendGradeCreatedEvent(event);
     }
-
-    @Override
-    public GpaResponse calculateGpaForStaff(
-            Long studentId,
-            Semester semester,
-            Integer academicYear,
-            Long staffId) {
-
-        List<Grade> grades =
-                gradeRepository.findByStudentIdAndSemesterAndAcademicYear(
-                        studentId, semester, academicYear);
-
-        Set<Long> assignedSubjects = getAssignedSubjects(staffId);
-
-        boolean allowed = grades.stream()
-                .anyMatch(g -> assignedSubjects.contains(g.getSubjectId()));
-
-        if (!allowed) {
-            throw new BaseException(ErrorCode.ACCESS_DENIED);
-        }
-
-        double gpa = calculateWeightedGpa(grades);
-
-        return buildGpaResponse(studentId, semester, academicYear, gpa);
-    }
-
-    // ======================================================
-    // ================= PRIVATE ============================
-    // ======================================================
 
     private void validateTeacherAssignment(Long teacherId, Long subjectId) {
         boolean assigned =
@@ -234,7 +200,8 @@ public class GradeServiceImpl implements GradeService {
             int page,
             int size) {
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Pageable pageable = PageRequest.of(page, size,
+                Sort.by("createdAt").descending());
 
         Specification<Grade> spec = (root, query, cb) -> {
 
@@ -262,39 +229,28 @@ public class GradeServiceImpl implements GradeService {
                 .map(this::mapToResponse);
     }
 
+    private Integer getCredit(Long subjectId) {
+        return subjectRepository.findById(subjectId)
+                .map(Subject::getCredit)
+                .orElse(3);
+    }
+
     private GradeResponse mapToResponse(Grade grade) {
+
+        String subjectName = subjectRepository.findById(grade.getSubjectId())
+                .map(Subject::getName)
+                .orElse(null);
+
         return GradeResponse.builder()
                 .id(grade.getId())
                 .studentId(grade.getStudentId())
                 .subjectId(grade.getSubjectId())
+                .subjectName(subjectName)
                 .type(grade.getType())
                 .score(grade.getScore())
                 .weight(grade.getWeight())
                 .semester(grade.getSemester())
                 .academicYear(grade.getAcademicYear())
-                .build();
-    }
-    private double calculateWeightedGpa(List<Grade> grades) {
-        double totalWeight = 0;
-        double weightedSum = 0;
-
-        for (Grade g : grades) {
-            weightedSum += g.getScore() * g.getWeight();
-            totalWeight += g.getWeight();
-        }
-
-        return totalWeight == 0 ? 0 : weightedSum / totalWeight;
-    }
-
-    private GpaResponse buildGpaResponse(Long studentId,
-                                         Semester semester,
-                                         Integer academicYear,
-                                         double gpa) {
-        return GpaResponse.builder()
-                .studentId(studentId)
-                .semester(semester.name())
-                .academicYear(academicYear)
-                .gpa(gpa)
                 .build();
     }
 }

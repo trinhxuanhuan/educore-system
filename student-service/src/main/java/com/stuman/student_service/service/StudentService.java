@@ -22,4 +22,5 @@ public interface StudentService {
     StudentPageResponse getStudents(Pageable pageable);
 
     void deleteStudent(Long id);
+    StudentResponse getStudentByUserId(Long userId);
 }

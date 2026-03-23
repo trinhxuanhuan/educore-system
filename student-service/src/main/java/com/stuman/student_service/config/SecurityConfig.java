@@ -19,37 +19,33 @@ public class SecurityConfig {
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
-
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-
-                        // Public
+                        // SWAGGER / ACTUATOR → cho phép
                         .requestMatchers(
-                                "/actuator/**",
+                                "/v3/api-docs/**",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                                "/swagger-ui.html",
+                                "/actuator/**"
                         ).permitAll()
-
-                        // Student Service APIs
+                        // INTERNAL API → cho phép
+                        .requestMatchers("/internal/**").permitAll()
+                        // Student Service APIs → yêu cầu role phù hợp
                         .requestMatchers("/api/v1/students/**")
                         .hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER", "ROLE_STUDENT")
-
-                        // Others
+                        // Các API khác → yêu cầu xác thực
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
                 );
-
         return http.build();
     }
-
 }

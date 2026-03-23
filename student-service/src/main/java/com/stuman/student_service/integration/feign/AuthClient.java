@@ -1,4 +1,4 @@
-package com.stuman.student_service.integration;
+package com.stuman.student_service.integration.feign;
 
 import com.stuman.student_service.config.FeignConfig;
 import com.stuman.student_service.dto.response.AuthUserResponse;
@@ -16,5 +16,3 @@ public interface AuthClient {
     AuthUserResponse getUserById(@PathVariable("userId") Long userId);
 
 }
-
-

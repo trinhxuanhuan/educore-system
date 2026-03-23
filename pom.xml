@@ -4,6 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.4.2</version>
+        <relativePath/>
+    </parent>
+
     <groupId>com.stuman</groupId>
     <artifactId>student-management-microservices</artifactId>
     <version>0.0.1-SNAPSHOT</version>
@@ -24,6 +31,8 @@
         <module>auth-service</module>
         <module>student-service</module>
         <module>grade-service</module>
+        <module>analytics-service</module>
+        <module>common-event</module>
         <!-- Sẽ thêm sau: auth-service, student-service, grade-service -->
     </modules>
 

@@ -29,7 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Bỏ qua JWT filter cho các API public & internal
+     * Bỏ qua JWT filter cho các API public & internal, cũng như Swagger/OpenAPI endpoints
      */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -37,7 +37,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String method = request.getMethod();
 
         return (path.equals("/api/v1/auth/login") && method.equals("POST"))
-                || (path.equals("/api/v1/auth/register") && method.equals("POST"));
+                || (path.equals("/api/v1/auth/register") && method.equals("POST"))
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/swagger-ui")
+                || path.equals("/swagger-ui.html");
     }
 
     @Override
@@ -47,46 +50,52 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        String bearer = request.getHeader("Authorization");
+        try {
+            String bearer = request.getHeader("Authorization");
 
-        //Không có token → cho đi tiếp
-        if (bearer == null || !bearer.startsWith("Bearer ")) {
+            // Không có token → cho đi tiếp
+            if (bearer == null || !bearer.startsWith("Bearer ")) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            String token = bearer.substring(7);
+
+            // Token không hợp lệ → cho đi tiếp (Security sẽ chặn sau)
+            if (!jwtProvider.validateToken(token)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            String username = jwtProvider.getUsernameFromToken(token);
+
+            // Tránh set authentication nhiều lần
+            if (username != null &&
+                    SecurityContextHolder.getContext().getAuthentication() == null) {
+
+                UserDetails userDetails =
+                        userDetailsService.loadUserByUsername(username);
+
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+
+                authentication.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request)
+                );
+
+                SecurityContextHolder.getContext()
+                        .setAuthentication(authentication);
+            }
+
             filterChain.doFilter(request, response);
-            return;
-        }
-
-        String token = bearer.substring(7);
-
-        //Token không hợp lệ → cho đi tiếp (Security sẽ chặn sau)
-        if (!jwtProvider.validateToken(token)) {
+        } catch (Exception ex) {
+            // Log lỗi để dễ debug, tránh ném exception ra ngoài gây 500
+            ex.printStackTrace();
             filterChain.doFilter(request, response);
-            return;
         }
-
-        String username = jwtProvider.getUsernameFromToken(token);
-
-        //Tránh set authentication nhiều lần
-        if (username != null &&
-                SecurityContextHolder.getContext().getAuthentication() == null) {
-
-            UserDetails userDetails =
-                    userDetailsService.loadUserByUsername(username);
-
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                    );
-
-            authentication.setDetails(
-                    new WebAuthenticationDetailsSource().buildDetails(request)
-            );
-
-            SecurityContextHolder.getContext()
-                    .setAuthentication(authentication);
-        }
-
-        filterChain.doFilter(request, response);
     }
 }

@@ -2,7 +2,6 @@ package com.stuman.grade_service.service;
 
 import com.stuman.grade_service.dto.request.CreateGradeRequest;
 import com.stuman.grade_service.dto.request.UpdateGradeRequest;
-import com.stuman.grade_service.dto.response.GpaResponse;
 import com.stuman.grade_service.dto.response.GradeResponse;
 import com.stuman.grade_service.entity.Semester;
 import org.springframework.data.domain.Page;
@@ -46,15 +45,4 @@ public interface GradeService {
             int size
     );
 
-    // GPA
-    GpaResponse calculateGpa(Long studentId,
-                             Semester semester,
-                             Integer year);
-
-    GpaResponse calculateGpaForStaff(
-            Long studentId,
-            Semester semester,
-            Integer year,
-            Long staffId
-    );
 }

@@ -2,8 +2,7 @@ package com.stuman.student_service.dto.response;
 
 import lombok.*;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

@@ -1,0 +1,66 @@
+server:
+  port: 8084
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: analytics-service
+
+  datasource:
+    url: jdbc:mysql://mysql:3306/analytics_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+  kafka:
+    bootstrap-servers: kafka:9092
+    consumer:
+      group-id: analytics-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.stuman.common_event"
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+
+  instance:
+    prefer-ip-address: true
+
+security:
+  jwt:
+    secret: thisIsASuperLongAndSecureSecretKeyForJWT2026
+    token-prefix: Bearer
+    header: Authorization
+
+logging:
+  level:
+    root: INFO
+    org.springframework.security: INFO
+    org.springframework.kafka: INFO
+    com.stuman.analytics_service: DEBUG
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

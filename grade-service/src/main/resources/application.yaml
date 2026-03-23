@@ -1,12 +1,13 @@
 server:
   port: 8083
+  forward-headers-strategy: framework
 
 spring:
   application:
     name: grade-service
 
   datasource:
-    url: jdbc:mysql://localhost:3306/grade_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://mysql:3306/grade_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -25,12 +26,23 @@ spring:
     serialization:
       write-dates-as-timestamps: false
 
+  kafka:
+    bootstrap-servers: kafka:9092
+    producer:
+      acks: all
+      retries: 3
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+      properties:
+        spring.json.add.type.headers: true
+
 eureka:
   client:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://eureka-server:8761/eureka/
   instance:
     prefer-ip-address: true
 
@@ -44,3 +56,8 @@ logging:
   level:
     root: INFO
     org.springframework.security: INFO
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

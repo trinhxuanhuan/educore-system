@@ -7,6 +7,7 @@ import com.stuman.student_service.dto.response.StudentPageResponse;
 import com.stuman.student_service.dto.response.StudentResponse;
 import com.stuman.student_service.dto.response.StudentSummaryResponse;
 import com.stuman.student_service.entity.Student;
+import com.stuman.student_service.entity.StudentStatus;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -26,37 +27,22 @@ public interface StudentMapper {
 
     // ===================== ADMIN UPDATE =====================
     @Mapping(target = "id", ignore = true)
-    void updateEntity(
-            @MappingTarget Student student,
-            StudentUpdateRequest request
-    );
+    void updateEntity(@MappingTarget Student student, StudentUpdateRequest request);
 
     // ===================== STUDENT SELF UPDATE =====================
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "studentCode", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "userId", ignore = true)
-    void updateSelf(
-            @MappingTarget Student student,
-            StudentSelfUpdateRequest request
-    );
+    void updateSelf(@MappingTarget Student student, StudentSelfUpdateRequest request);
 
     // ===================== RESPONSE =====================
-    @Mapping(
-            target = "gender",
-            expression = "java(student.getGender() != null ? student.getGender().name() : null)"
-    )
-    @Mapping(
-            target = "status",
-            expression = "java(student.getStatus() != null ? student.getStatus().name() : null)"
-    )
+    @Mapping(target = "gender", source = "gender")
+    @Mapping(target = "status", source = "status")
     StudentResponse toResponse(Student student);
 
     // ===================== SUMMARY =====================
-    @Mapping(
-            target = "status",
-            expression = "java(student.getStatus() != null ? student.getStatus().name() : null)"
-    )
+    @Mapping(target = "status", source = "status")
     StudentSummaryResponse toSummary(Student student);
 
     // ===================== PAGE =====================

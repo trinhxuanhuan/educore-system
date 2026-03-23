@@ -1,4 +1,4 @@
-package com.stuman.grade_service.integration;
+package com.stuman.grade_service.integration.feign;
 
 import com.stuman.grade_service.dto.response.UserInfoResponse;
 import com.stuman.grade_service.config.FeignConfig;

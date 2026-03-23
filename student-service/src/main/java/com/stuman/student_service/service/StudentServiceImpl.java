@@ -1,5 +1,6 @@
 package com.stuman.student_service.service;
 
+import com.stuman.common_event.StudentCreatedEvent;
 import com.stuman.student_service.dto.request.StudentCreateRequest;
 import com.stuman.student_service.dto.request.StudentSelfUpdateRequest;
 import com.stuman.student_service.dto.request.StudentUpdateRequest;
@@ -9,7 +10,8 @@ import com.stuman.student_service.dto.response.StudentResponse;
 import com.stuman.student_service.entity.Student;
 import com.stuman.student_service.exception.AppException;
 import com.stuman.student_service.exception.ErrorCode;
-import com.stuman.student_service.integration.AuthClient;
+import com.stuman.student_service.integration.feign.AuthClient;
+import com.stuman.student_service.integration.kafka.StudentKafkaProducer;
 import com.stuman.student_service.mapper.StudentMapper;
 import com.stuman.student_service.repository.StudentRepository;
 import com.stuman.student_service.security.CustomUserPrincipal;
@@ -27,6 +29,7 @@ public class StudentServiceImpl implements StudentService {
     private final StudentRepository studentRepository;
     private final StudentMapper studentMapper;
     private final AuthClient authClient;
+    private final StudentKafkaProducer kafkaProducer;
 
     // ===================== COMMON =====================
     private CustomUserPrincipal currentUser() {
@@ -67,7 +70,7 @@ public class StudentServiceImpl implements StudentService {
             throw new AppException(ErrorCode.STUDENT_ALREADY_EXISTS);
         }
 
-        // 1️⃣ GỌI AUTH-SERVICE
+        // gọi auth-service
         AuthUserResponse authUser;
         try {
             authUser = authClient.getUserById(request.getUserId());
@@ -79,22 +82,42 @@ public class StudentServiceImpl implements StudentService {
             throw new AppException(ErrorCode.AUTH_USER_NOT_FOUND);
         }
 
-        // 2️⃣ CHECK EMAIL TRÙNG
         if (studentRepository.existsByEmail(authUser.getEmail())) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
-        // 3️⃣ MAP ENTITY
+        // map entity
         Student student = studentMapper.toEntity(request);
         student.setUserId(request.getUserId());
         student.setEmail(authUser.getEmail());
-
-        // 4️⃣ SINH MÃ SINH VIÊN
         student.setStudentCode(generateStudentCode());
 
-        return studentMapper.toResponse(
-                studentRepository.save(student)
-        );
+        // save DB
+        Student savedStudent = studentRepository.save(student);
+
+        // create event
+        StudentCreatedEvent event =
+                StudentCreatedEvent.builder()
+                        .studentId(savedStudent.getId())
+                        .studentCode(savedStudent.getStudentCode())
+                        .fullName(savedStudent.getFullName())
+                        .email(savedStudent.getEmail())
+                        .className(savedStudent.getClassName())
+                        .build();
+
+        // publish kafka
+        kafkaProducer.sendStudentCreatedEvent(event);
+
+        // return response
+        return studentMapper.toResponse(savedStudent);
+    }
+    @Override
+    public StudentResponse getStudentByUserId(Long userId) {
+
+        Student student = studentRepository.findByUserId(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.STUDENT_NOT_FOUND));
+
+        return studentMapper.toResponse(student);
     }
 
 

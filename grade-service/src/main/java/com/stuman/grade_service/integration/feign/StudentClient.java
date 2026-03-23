@@ -1,5 +1,4 @@
-package com.stuman.grade_service.integration;
-
+package com.stuman.grade_service.integration.feign;
 import com.stuman.grade_service.config.FeignConfig;
 import com.stuman.grade_service.dto.response.StudentInternalResponse;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -15,5 +14,10 @@ public interface StudentClient {
     @GetMapping("/internal/students/{id}")
     StudentInternalResponse getStudentById(
             @PathVariable("id") Long id
+    );
+
+    @GetMapping("/internal/students/user/{userId}")
+    StudentInternalResponse getStudentByUserId(
+            @PathVariable("userId") Long userId
     );
 }

@@ -28,7 +28,11 @@ public class AdminInitializer implements CommandLineRunner {
         }
 
         Role adminRole = roleRepository.findByName(RoleName.ADMIN)
-                .orElseThrow();
+                .orElseGet(() -> roleRepository.save(
+                        Role.builder()
+                                .name(RoleName.ADMIN)
+                                .build()
+                ));
 
         User admin = User.builder()
                 .username("admin")

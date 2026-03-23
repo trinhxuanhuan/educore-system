@@ -3,7 +3,10 @@ package com.stuman.grade_service.controller;
 import com.stuman.grade_service.dto.request.CreateSubjectRequest;
 import com.stuman.grade_service.dto.response.SubjectResponse;
 import com.stuman.grade_service.service.SubjectService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,21 +15,26 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/subjects")
 @RequiredArgsConstructor
+@Tag(name = "Subject API", description = "Operations for managing subjects")
 public class SubjectController {
 
     private final SubjectService subjectService;
 
+    @Operation(summary = "Create a new subject (ADMIN only)")
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public SubjectResponse createSubject(
+    public ResponseEntity<SubjectResponse> createSubject(
             @RequestBody CreateSubjectRequest request
     ) {
-        return subjectService.createSubject(request);
+        SubjectResponse response = subjectService.createSubject(request);
+        return ResponseEntity.status(201).body(response);
     }
 
+    @Operation(summary = "Get all subjects (ADMIN, TEACHER, STUDENT)")
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT')")
-    public List<SubjectResponse> getAllSubjects() {
-        return subjectService.getAllSubjects();
+    public ResponseEntity<List<SubjectResponse>> getAllSubjects() {
+        List<SubjectResponse> subjects = subjectService.getAllSubjects();
+        return ResponseEntity.ok(subjects);
     }
 }

@@ -1,0 +1,119 @@
+version: "3.8"
+
+services:
+
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: student_management
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  eureka-server:
+    build: ./eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    depends_on:
+      - mysql
+      - eureka-server
+    environment:
+      DB_USERNAME: root
+      DB_PASSWORD: 123456
+      EUREKA_SERVER: http://eureka-server:8761/eureka/
+    ports:
+      - "8081:8081"
+
+  student-service:
+    build: ./student-service
+    container_name: student-service
+    depends_on:
+      - mysql
+      - eureka-server
+      - auth-service
+      - kafka
+    environment:
+      DB_USERNAME: root
+      DB_PASSWORD: 123456
+      EUREKA_SERVER: http://eureka-server:8761/eureka
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8082:8082"
+
+  grade-service:
+    build: ./grade-service
+    container_name: grade-service
+    depends_on:
+      - mysql
+      - eureka-server
+      - kafka
+    environment:
+      DB_USERNAME: root
+      DB_PASSWORD: 123456
+      EUREKA_SERVER: http://eureka-server:8761/eureka
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8083:8083"
+
+  analytics-service:
+    build: ./analytics-service
+    container_name: analytics-service
+    depends_on:
+      - mysql
+      - eureka-server
+      - kafka
+    environment:
+      DB_USERNAME: root
+      DB_PASSWORD: 123456
+      EUREKA_SERVER: http://eureka-server:8761/eureka
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8084:8084"
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    depends_on:
+      - eureka-server
+      - auth-service
+      - student-service
+      - grade-service
+    environment:
+      EUREKA_SERVER: http://eureka-server:8761/eureka
+    ports:
+      - "8080:8080"
+
+volumes:
+  mysql_data:

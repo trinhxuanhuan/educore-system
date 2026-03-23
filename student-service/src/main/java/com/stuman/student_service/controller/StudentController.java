@@ -6,13 +6,17 @@ import com.stuman.student_service.dto.request.StudentUpdateRequest;
 import com.stuman.student_service.dto.response.StudentPageResponse;
 import com.stuman.student_service.dto.response.StudentResponse;
 import com.stuman.student_service.service.StudentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Student API", description = "Operations for managing students")
 @RestController
 @RequestMapping("/api/v1/students")
 @RequiredArgsConstructor
@@ -20,7 +24,7 @@ public class StudentController {
 
     private final StudentService studentService;
 
-    // Create new Student
+    @Operation(summary = "Create new student")
     @PostMapping
     public ResponseEntity<StudentResponse> createStudent(
             @Valid @RequestBody StudentCreateRequest request
@@ -29,7 +33,7 @@ public class StudentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // Update Student by ID
+    @Operation(summary = "Update student by ID")
     @PutMapping("/{id}")
     public ResponseEntity<StudentResponse> updateStudent(
             @PathVariable("id") Long id,
@@ -39,7 +43,7 @@ public class StudentController {
         return ResponseEntity.ok(response);
     }
 
-    // Get student by ID
+    @Operation(summary = "Get student by ID")
     @GetMapping("/{id}")
     public ResponseEntity<StudentResponse> getStudentById(
             @PathVariable("id") Long id
@@ -48,7 +52,7 @@ public class StudentController {
         return ResponseEntity.ok(response);
     }
 
-    // Delete Student by ID
+    @Operation(summary = "Delete student by ID")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteStudent(
             @PathVariable("id") Long id
@@ -56,12 +60,14 @@ public class StudentController {
         studentService.deleteStudent(id);
         return ResponseEntity.noContent().build();
     }
-    // Get my Profile
+
+    @Operation(summary = "Get my profile")
     @GetMapping("/me")
     public StudentResponse getMyProfile() {
         return studentService.getMyProfile();
     }
-    // Update my Profile
+
+    @Operation(summary = "Update my profile")
     @PutMapping("/me")
     public ResponseEntity<StudentResponse> updateMyProfile(
             @Valid @RequestBody StudentSelfUpdateRequest request
@@ -69,13 +75,9 @@ public class StudentController {
         return ResponseEntity.ok(studentService.updateMyProfile(request));
     }
 
-
-
-    // Get students with paging
+    @Operation(summary = "Get students with paging (ADMIN/TEACHER only)")
     @GetMapping
-    public StudentPageResponse getStudents(Pageable pageable) {
+    public StudentPageResponse getStudents(@ParameterObject Pageable pageable) {
         return studentService.getStudents(pageable);
     }
-
 }
-
