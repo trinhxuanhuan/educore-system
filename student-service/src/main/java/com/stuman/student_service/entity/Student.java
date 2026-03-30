@@ -44,4 +44,8 @@ public class Student {
     private StudentStatus status = StudentStatus.ACTIVE;
 
     private String note;
+
+    @Column(name = "deleted")
+    private boolean deleted = false;
+
 }
