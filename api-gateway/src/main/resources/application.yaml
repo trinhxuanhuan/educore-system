@@ -91,11 +91,13 @@ spring:
           filters:
             - RewritePath=/v3/api-docs/analytics, /v3/api-docs
 
+# ================= EUREKA =================
 eureka:
   client:
     service-url:
       defaultZone: http://eureka-server:8761/eureka/
 
+# ================= SWAGGER =================
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
@@ -108,3 +110,15 @@ springdoc:
         url: /v3/api-docs/grade
       - name: analytics-service
         url: /v3/api-docs/analytics
+
+# ================= SECURITY =================
+security:
+  jwt:
+    secret: thisIsASuperLongAndSecureSecretKeyForJWT2026
+
+# ================= LOGGING =================
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty.http.client: DEBUG
