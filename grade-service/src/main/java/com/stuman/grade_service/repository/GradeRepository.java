@@ -20,4 +20,5 @@ public interface GradeRepository
             Semester semester,
             Integer academicYear
     );
+    void deleteByStudentId(Long studentId);
 }

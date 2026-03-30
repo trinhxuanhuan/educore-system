@@ -28,14 +28,25 @@ spring:
 
   kafka:
     bootstrap-servers: kafka:9092
+
+    # ================= PRODUCER =================
     producer:
       acks: all
       retries: 3
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-
       properties:
         spring.json.add.type.headers: true
+
+    # ================= CONSUMER =================
+    consumer:
+      group-id: grade-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.use.type.headers: true
 
 eureka:
   client:
