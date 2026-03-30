@@ -35,6 +35,9 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "com.stuman.common_event"
+        spring.json.use.type.headers: true
+    listener:
+      concurrency: 3
 
 eureka:
   client:
@@ -56,7 +59,7 @@ logging:
   level:
     root: INFO
     org.springframework.security: INFO
-    org.springframework.kafka: INFO
+    org.springframework.kafka: DEBUG
     com.stuman.analytics_service: DEBUG
 
 springdoc:
