@@ -1,4 +1,5 @@
 package com.stuman.analytics_service.service.impl;
+
 import com.stuman.analytics_service.entity.*;
 import com.stuman.analytics_service.exception.BaseException;
 import com.stuman.analytics_service.repository.GradeCacheRepository;
@@ -39,7 +40,20 @@ class AnalyticsServiceImplTest {
     @InjectMocks
     private AnalyticsServiceImpl service;
 
+    @BeforeEach
+    void setup() {
+        lenient().when(repository.save(any()))
+                .thenAnswer(i -> i.getArguments()[0]);
+
+        lenient().when(studentCourseRepository.save(any()))
+                .thenAnswer(i -> i.getArguments()[0]);
+
+        lenient().when(gradeCacheRepository.save(any()))
+                .thenAnswer(i -> i.getArguments()[0]);
+    }
+
     // ===================== CREATE =====================
+
     @Test
     void handleStudentCreated_success() {
         StudentCreatedEvent event = StudentCreatedEvent.builder()
@@ -60,23 +74,21 @@ class AnalyticsServiceImplTest {
 
     @Test
     void handleStudentCreated_alreadyExists() {
-        StudentCreatedEvent event = StudentCreatedEvent.builder()
-                .studentId(1L)
-                .build();
-
         when(repository.existsById(1L)).thenReturn(true);
 
-        service.handleStudentCreated(event);
+        service.handleStudentCreated(
+                StudentCreatedEvent.builder().studentId(1L).build()
+        );
 
         verify(repository, never()).save(any());
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     // ===================== DELETE =====================
+
     @Test
     void handleStudentDeleted_success() {
-        StudentDeletedEvent event = new StudentDeletedEvent(1L);
-
-        service.handleStudentDeleted(event);
+        service.handleStudentDeleted(new StudentDeletedEvent(1L));
 
         verify(gradeCacheRepository).deleteByStudentId(1L);
         verify(studentCourseRepository).deleteByStudentId(1L);
@@ -84,6 +96,7 @@ class AnalyticsServiceImplTest {
     }
 
     // ===================== UPDATE =====================
+
     @Test
     void handleStudentUpdated_success() {
         StudentAnalytics analytics = StudentAnalytics.builder()
@@ -103,10 +116,12 @@ class AnalyticsServiceImplTest {
         service.handleStudentUpdated(event);
 
         assertEquals("NEW", analytics.getStudentCode());
+        assertEquals("Updated", analytics.getFullName());
         verify(repository).save(analytics);
     }
 
     // ===================== GRADE =====================
+
     @Test
     void handleGradeCreated_invalidData() {
         GradeCreatedEvent event = GradeCreatedEvent.builder()
@@ -130,55 +145,78 @@ class AnalyticsServiceImplTest {
         service.handleGradeCreated(event);
 
         verify(gradeCacheRepository, never()).save(any());
+        verify(studentCourseRepository, never()).save(any());
     }
 
     @Test
     void handleGradeCreated_success() {
+        Long studentId = 1L;
+        Long subjectId = 1L;
+
         GradeCreatedEvent event = GradeCreatedEvent.builder()
                 .gradeId(1L)
-                .studentId(1L)
-                .subjectId(1L)
+                .studentId(studentId)
+                .subjectId(subjectId)
                 .score(8.0)
                 .weight(1.0)
                 .credit(3)
                 .build();
 
-        when(repository.existsById(1L)).thenReturn(true);
+        when(repository.existsById(studentId)).thenReturn(true);
 
+        // Grade cache
         when(gradeCacheRepository.findByGradeId(1L))
                 .thenReturn(Optional.empty());
 
-        when(gradeCacheRepository.findByStudentIdAndSubjectId(1L, 1L))
+        when(gradeCacheRepository.findByStudentIdAndSubjectId(studentId, subjectId))
                 .thenReturn(List.of(
-                        GradeCache.builder().score(8.0).weight(1.0).build()
-                ));
-
-        when(studentCourseRepository.findByStudentIdAndSubjectId(1L, 1L))
-                .thenReturn(Optional.empty());
-
-        when(studentCourseRepository.findByStudentId(1L))
-                .thenReturn(List.of(
-                        StudentCourse.builder()
-                                .finalScore(8.0)
-                                .credit(3)
+                        GradeCache.builder()
+                                .score(8.0)
+                                .weight(1.0)
                                 .build()
                 ));
 
-        StudentAnalytics analytics = StudentAnalytics.builder()
-                .studentId(1L)
+        // Course
+        when(studentCourseRepository.findByStudentIdAndSubjectId(studentId, subjectId))
+                .thenReturn(Optional.empty());
+
+        StudentCourse savedCourse = StudentCourse.builder()
+                .studentId(studentId)
+                .subjectId(subjectId)
+                .finalScore(8.0)
+                .credit(3)
                 .build();
 
-        when(repository.findById(1L)).thenReturn(Optional.of(analytics));
+        when(studentCourseRepository.findByStudentId(studentId))
+                .thenReturn(List.of(savedCourse));
 
+        // Analytics
+        StudentAnalytics analytics = StudentAnalytics.builder()
+                .studentId(studentId)
+                .build();
+
+        when(repository.findById(studentId))
+                .thenReturn(Optional.of(analytics));
+
+        // RUN
         service.handleGradeCreated(event);
 
+        // VERIFY
         verify(gradeCacheRepository).save(any());
         verify(studentCourseRepository).save(any());
-        verify(repository).save(any());
+
+        verify(repository).save(argThat(a ->
+                a.getGpa() != null &&
+                        a.getTotalSubjects() == 1 &&
+                        a.getTotalCredits() == 3 &&
+                        a.getClassification() == Classification.GOOD
+        ));
+
         verify(eventPublisher).publishEvent(any());
     }
 
     // ===================== GET =====================
+
     @Test
     void getStudentAnalytics_notFound() {
         when(repository.findById(1L)).thenReturn(Optional.empty());
@@ -202,5 +240,6 @@ class AnalyticsServiceImplTest {
 
         assertEquals(1L, result.getStudentId());
         assertEquals(8.0, result.getGpa());
+        assertEquals("GOOD", result.getClassification().replace(" ", "_"));
     }
 }
