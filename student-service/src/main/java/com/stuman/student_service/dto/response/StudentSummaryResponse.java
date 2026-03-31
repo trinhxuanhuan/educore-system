@@ -3,9 +3,9 @@ package com.stuman.student_service.dto.response;
 import lombok.*;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class StudentSummaryResponse {
     private Long id;
     private String studentCode;

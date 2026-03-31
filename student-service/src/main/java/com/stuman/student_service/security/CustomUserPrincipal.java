@@ -5,8 +5,7 @@ import lombok.*;
 import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
+@Data
 public class CustomUserPrincipal {
 
     private Long userId;

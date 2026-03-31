@@ -6,9 +6,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class StudentResponse {
     private Long id;
     private String studentCode;

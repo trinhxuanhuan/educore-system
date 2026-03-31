@@ -1,4 +1,4 @@
-package com.stuman.student_service.service.impl;
+package com.stuman.student_service.service;
 
 import com.stuman.student_service.dto.request.StudentCreateRequest;
 import com.stuman.student_service.dto.request.StudentSelfUpdateRequest;

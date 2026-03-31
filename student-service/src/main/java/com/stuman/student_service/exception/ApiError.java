@@ -2,9 +2,7 @@ package com.stuman.student_service.exception;
 import lombok.*;
 import java.time.LocalDateTime;
 import java.util.Map;
-
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
