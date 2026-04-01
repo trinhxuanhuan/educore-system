@@ -69,7 +69,14 @@ class AnalyticsServiceImplTest {
         service.handleStudentCreated(event);
 
         verify(repository).save(any(StudentAnalytics.class));
-        verify(eventPublisher).publishEvent(any());
+
+        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+
+        Object publishedEvent = captor.getValue();
+        assertTrue(publishedEvent instanceof AnalyticsServiceImpl.StudentAnalyticsCreatedEvent);
+        var ev = (AnalyticsServiceImpl.StudentAnalyticsCreatedEvent) publishedEvent;
+        assertEquals(1L, ev.studentId());
     }
 
     @Test
@@ -117,6 +124,7 @@ class AnalyticsServiceImplTest {
 
         assertEquals("NEW", analytics.getStudentCode());
         assertEquals("Updated", analytics.getFullName());
+
         verify(repository).save(analytics);
     }
 
@@ -146,6 +154,7 @@ class AnalyticsServiceImplTest {
 
         verify(gradeCacheRepository, never()).save(any());
         verify(studentCourseRepository, never()).save(any());
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
@@ -164,7 +173,6 @@ class AnalyticsServiceImplTest {
 
         when(repository.existsById(studentId)).thenReturn(true);
 
-        // Grade cache
         when(gradeCacheRepository.findByGradeId(1L))
                 .thenReturn(Optional.empty());
 
@@ -176,11 +184,10 @@ class AnalyticsServiceImplTest {
                                 .build()
                 ));
 
-        // Course
         when(studentCourseRepository.findByStudentIdAndSubjectId(studentId, subjectId))
                 .thenReturn(Optional.empty());
 
-        StudentCourse savedCourse = StudentCourse.builder()
+        StudentCourse course = StudentCourse.builder()
                 .studentId(studentId)
                 .subjectId(subjectId)
                 .finalScore(8.0)
@@ -188,9 +195,8 @@ class AnalyticsServiceImplTest {
                 .build();
 
         when(studentCourseRepository.findByStudentId(studentId))
-                .thenReturn(List.of(savedCourse));
+                .thenReturn(List.of(course));
 
-        // Analytics
         StudentAnalytics analytics = StudentAnalytics.builder()
                 .studentId(studentId)
                 .build();
@@ -198,10 +204,8 @@ class AnalyticsServiceImplTest {
         when(repository.findById(studentId))
                 .thenReturn(Optional.of(analytics));
 
-        // RUN
         service.handleGradeCreated(event);
 
-        // VERIFY
         verify(gradeCacheRepository).save(any());
         verify(studentCourseRepository).save(any());
 
@@ -212,7 +216,13 @@ class AnalyticsServiceImplTest {
                         a.getClassification() == Classification.GOOD
         ));
 
-        verify(eventPublisher).publishEvent(any());
+        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+
+        Object publishedEvent = captor.getValue();
+        assertTrue(publishedEvent instanceof AnalyticsServiceImpl.StudentAnalyticsUpdatedEvent);
+        var ev = (AnalyticsServiceImpl.StudentAnalyticsUpdatedEvent) publishedEvent;
+        assertEquals(1L, ev.studentId());
     }
 
     // ===================== GET =====================
