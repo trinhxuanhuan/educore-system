@@ -7,7 +7,7 @@ services:
     container_name: mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: student_management
     ports:
       - "3307:3306"
@@ -50,8 +50,9 @@ services:
       - mysql
       - eureka-server
     environment:
-      DB_USERNAME: root
-      DB_PASSWORD: 123456
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
       EUREKA_SERVER: http://eureka-server:8761/eureka/
     ports:
       - "8081:8081"
@@ -65,8 +66,9 @@ services:
       - auth-service
       - kafka
     environment:
-      DB_USERNAME: root
-      DB_PASSWORD: 123456
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
       EUREKA_SERVER: http://eureka-server:8761/eureka
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     ports:
@@ -80,8 +82,9 @@ services:
       - eureka-server
       - kafka
     environment:
-      DB_USERNAME: root
-      DB_PASSWORD: 123456
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
       EUREKA_SERVER: http://eureka-server:8761/eureka
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     ports:
@@ -95,8 +98,9 @@ services:
       - eureka-server
       - kafka
     environment:
-      DB_USERNAME: root
-      DB_PASSWORD: 123456
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
       EUREKA_SERVER: http://eureka-server:8761/eureka
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     ports:
@@ -111,6 +115,7 @@ services:
       - student-service
       - grade-service
     environment:
+      JWT_SECRET: ${JWT_SECRET}
       EUREKA_SERVER: http://eureka-server:8761/eureka
     ports:
       - "8080:8080"
