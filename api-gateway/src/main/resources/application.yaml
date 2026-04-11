@@ -114,7 +114,7 @@ springdoc:
 # ================= SECURITY =================
 security:
   jwt:
-    secret: thisIsASuperLongAndSecureSecretKeyForJWT2026
+    secret: ${JWT_SECRET}
 
 # ================= LOGGING =================
 logging:
