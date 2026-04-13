@@ -37,6 +37,13 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
+  # ================= TRACING =================
+  zipkin:
+    image: openzipkin/zipkin:3
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+
   eureka-server:
     build: ./eureka-server
     container_name: eureka-server
@@ -49,11 +56,13 @@ services:
     depends_on:
       - mysql
       - eureka-server
+      - zipkin
     environment:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       EUREKA_SERVER: http://eureka-server:8761/eureka/
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     ports:
       - "8081:8081"
 
@@ -65,12 +74,14 @@ services:
       - eureka-server
       - auth-service
       - kafka
+      - zipkin
     environment:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       EUREKA_SERVER: http://eureka-server:8761/eureka
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     ports:
       - "8082:8082"
 
@@ -81,12 +92,14 @@ services:
       - mysql
       - eureka-server
       - kafka
+      - zipkin
     environment:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       EUREKA_SERVER: http://eureka-server:8761/eureka
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     ports:
       - "8083:8083"
 
@@ -97,12 +110,14 @@ services:
       - mysql
       - eureka-server
       - kafka
+      - zipkin
     environment:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       EUREKA_SERVER: http://eureka-server:8761/eureka
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     ports:
       - "8084:8084"
 
@@ -114,9 +129,11 @@ services:
       - auth-service
       - student-service
       - grade-service
+      - zipkin
     environment:
       JWT_SECRET: ${JWT_SECRET}
       EUREKA_SERVER: http://eureka-server:8761/eureka
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     ports:
       - "8080:8080"
 

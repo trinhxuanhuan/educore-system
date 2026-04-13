@@ -122,3 +122,11 @@ logging:
     root: INFO
     org.springframework.cloud.gateway: DEBUG
     reactor.netty.http.client: DEBUG
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0        # trace 100% request (dùng cho dev/demo)
+  zipkin:
+    tracing:
+      endpoint: ${MANAGEMENT_ZIPKIN_TRACING_ENDPOINT:http://localhost:9411/api/v2/spans}
