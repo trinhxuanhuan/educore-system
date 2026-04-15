@@ -1,4 +1,4 @@
-# 🎓 Student Management System — Microservices Architecture
+# 🎓 EduCore — Event-driven Academic Management System
 
 <p align="center">
   <img src="https://img.shields.io/badge/Java-17-orange?style=for-the-badge&logo=java" />
@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/CI/CD-GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" />
 </p>
 
-> A production-ready **Student Management System** built with a modern microservices architecture. The system covers authentication, student data management, academic grading, and real-time analytics — demonstrating enterprise-level patterns such as event-driven communication, JWT-based security, API gateway routing, and service discovery.
+> A production-ready **EduCore — Event-driven Academic Management System** built with a modern microservices architecture. The system covers authentication, student data management, academic grading, and real-time analytics — demonstrating enterprise-level patterns such as event-driven communication, JWT-based security, API gateway routing, and service discovery.
 
 ---
 
@@ -125,7 +125,7 @@
 ## 📁 Project Structure
 
 ```
-student-management-microservices/
+educore-system/
 ├── api-gateway/            # Spring Cloud Gateway — routing & JWT auth
 ├── eureka-server/          # Netflix Eureka — service registry
 ├── auth-service/           # Authentication, JWT issuance, user & role management
@@ -187,8 +187,8 @@ Request → API Gateway (JWT Validation + Role Check) → Microservice (JWT Re-v
 
 ```bash
 # Clone the repository
-git clone https://github.com/trinhxuanhuan/student-management-microservices.git
-cd student-management-microservices
+git clone https://github.com/trinhxuanhuan/educore-system.git
+cd educore-system
 
 # Start all services
 docker-compose up --build
