@@ -1,0 +1,6 @@
+DB_USERNAME=root
+DB_PASSWORD=123456
+
+# Sinh bằng lệnh PowerShell:
+# [Convert]::ToBase64String((1..64 | ForEach-Object { [byte](Get-Random -Max 256) }))
+JWT_SECRET=your-super-long-random-secret-here
