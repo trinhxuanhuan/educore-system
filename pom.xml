@@ -11,13 +11,13 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.stuman</groupId>
-    <artifactId>student-management-microservices</artifactId>
+    <groupId>com.educore</groupId>
+    <artifactId>educore-system</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>Student Management Microservices</name>
-    <description>Multi-module microservices project</description>
+    <name>EduCore � Event-driven Academic Management System</name>
+    <description>Distributed academic management system using microservices and Kafka</description>
 
     <properties>
         <java.version>17</java.version>
@@ -26,14 +26,14 @@
     </properties>
 
     <modules>
-        <module>eureka-server</module>
-        <module>api-gateway</module>
-        <module>auth-service</module>
-        <module>student-service</module>
-        <module>grade-service</module>
-        <module>analytics-service</module>
-        <module>common-event</module>
-        <!-- Sẽ thêm sau: auth-service, student-service, grade-service -->
+        <module>educore-eureka-server</module>
+        <module>educore-api-gateway</module>
+        <module>educore-auth-service</module>
+        <module>educore-student-service</module>
+        <module>educore-grade-service</module>
+        <module>educore-analytics-service</module>
+        <module>educore-common-event</module>
+        <!-- Sẽ thêm sau: educore-auth-service, educore-student-service, educore-grade-service -->
     </modules>
 
     <dependencyManagement>
