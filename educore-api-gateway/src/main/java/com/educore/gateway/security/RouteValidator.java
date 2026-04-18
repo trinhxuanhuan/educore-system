@@ -9,19 +9,15 @@ import java.util.function.Predicate;
 public class RouteValidator {
 
     private static final List<String> PUBLIC_ENDPOINTS = List.of(
-            "/api/v1/auth/login",
-            "/api/v1/auth/register",
+            "/api/v1/auth",
             "/v3/api-docs",
             "/swagger-ui",
-            "/swagger-ui.html",
-            "/webjars",
             "/swagger-resources",
+            "/webjars",
             "/eureka"
     );
 
     public Predicate<String> isSecured =
             path -> PUBLIC_ENDPOINTS.stream()
-                    .noneMatch(publicPath ->
-                            path.equals(publicPath) || path.startsWith(publicPath + "/")
-                    );
+                    .noneMatch(path::startsWith);
 }

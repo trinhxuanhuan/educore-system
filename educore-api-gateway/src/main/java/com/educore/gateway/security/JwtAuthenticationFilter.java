@@ -20,43 +20,48 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+
         String path = exchange.getRequest().getURI().getPath();
-        //Skip public APIs
+
+        // Public API → bỏ qua
         if (!routeValidator.isSecured.test(path)) {
             return chain.filter(exchange);
         }
+
         String authHeader = exchange.getRequest()
                 .getHeaders()
                 .getFirst(HttpHeaders.AUTHORIZATION);
-        //Không có token
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return unauthorizedHandler.handle(exchange, "Missing Authorization header");
         }
+
         String token = authHeader.substring(7);
-        // Token sai
+
         if (!jwtService.isTokenValid(token)) {
             return unauthorizedHandler.handle(exchange, "Invalid JWT token");
         }
-        // Extract info từ JWT
+
         Long userId = jwtService.getUserId(token);
         String role = jwtService.getRole(token);
-        //Token thiếu data
+
         if (userId == null || role == null) {
             return unauthorizedHandler.handle(exchange, "Invalid JWT payload");
         }
-        //Forward xuống service
-        ServerWebExchange mutatedExchange = exchange.mutate()
+
+        ServerWebExchange mutated = exchange.mutate()
                 .request(builder -> builder
                         .header("X-User-Id", String.valueOf(userId))
                         .header("X-Role", role)
+                        .header(HttpHeaders.AUTHORIZATION, authHeader) // optional but GOOD PRACTICE
                 )
                 .build();
 
-        return chain.filter(mutatedExchange);
+        return chain.filter(mutated);
     }
-    //QUAN TRỌNG: chạy TRƯỚC AuthorizationFilter
+
     @Override
     public int getOrder() {
-        return 0;
+        return -1; // luôn chạy trước
     }
 }

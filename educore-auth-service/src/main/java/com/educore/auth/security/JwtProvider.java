@@ -5,6 +5,7 @@ import com.educore.auth.exception.BaseException;
 import com.educore.auth.exception.ErrorCode;
 import com.educore.auth.repository.UserRepository;
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -34,7 +35,10 @@ public class JwtProvider {
     // ================= CORE =================
 
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        System.out.println("JWT SECRET: " + jwtSecret); // 👈 THÊM Ở ĐÂY
+
+        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     // ================= GENERATE TOKEN =================
@@ -52,13 +56,12 @@ public class JwtProvider {
         List<String> roles = principal.getAuthorities()
                 .stream()
                 .map(GrantedAuthority::getAuthority)
-                .map(role -> role.replace("ROLE_", ""))
                 .collect(Collectors.toList());
 
         return Jwts.builder()
                 .setSubject(user.getUsername())
                 .claim(JwtConstants.ROLES, roles)
-                .claim(JwtConstants.USER_ID, user.getId())   // ⭐ QUAN TRỌNG NHẤT
+                .claim(JwtConstants.USER_ID, user.getId())   //QUAN TRỌNG NHẤT
                 .setIssuedAt(new Date())
                 .setExpiration(
                         new Date(System.currentTimeMillis() + jwtExpirationMs)
@@ -95,7 +98,9 @@ public class JwtProvider {
         try {
             getClaims(token);
             return true;
-        } catch (JwtException | IllegalArgumentException ex) {
+        } catch (Exception ex) {
+            // In thẳng ra console của Docker để xem nó bị gì (Hết hạn? Sai chữ ký?)
+            System.out.println("DEBUG JWT: Token không hợp lệ do: " + ex.getMessage());
             return false;
         }
     }

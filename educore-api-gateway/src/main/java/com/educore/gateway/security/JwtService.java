@@ -15,7 +15,8 @@ public class JwtService {
     private String secret;
 
     private Key getSignKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        byte[] keyBytes = io.jsonwebtoken.io.Decoders.BASE64.decode(secret);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public Claims extractAllClaims(String token) {
@@ -30,7 +31,9 @@ public class JwtService {
         try {
             extractAllClaims(token);
             return true;
-        } catch (Exception e) {
+        }catch (Exception e) {
+            System.out.println("JWT ERROR: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }
@@ -40,7 +43,18 @@ public class JwtService {
     }
 
     public String getRole(String token) {
-        return extractAllClaims(token).get("role", String.class);
+        var roles = extractAllClaims(token).get("roles", java.util.List.class);
+
+        if (roles == null || roles.isEmpty()) return null;
+
+        String role = roles.get(0).toString();
+
+        // bỏ ROLE_
+        if (role.startsWith("ROLE_")) {
+            role = role.substring(5);
+        }
+
+        return role;
     }
 
     public Long getUserId(String token) {

@@ -9,7 +9,7 @@ import com.educore.grade.dto.request.CreateGradeRequest;
 import com.educore.grade.dto.request.UpdateGradeRequest;
 import com.educore.grade.dto.response.GradeResponse;
 import com.educore.grade.dto.response.StudentInternalResponse;
-import com.stuman.grade_service.entity.*;
+import com.educore.grade.entity.*;
 import com.educore.grade.exception.BaseException;
 import com.educore.grade.exception.ErrorCode;
 import com.educore.grade.integration.feign.StudentClient;
