@@ -8,7 +8,7 @@ import com.educore.common.GradeCreatedEvent;
 import com.educore.common.StudentCreatedEvent;
 import com.educore.common.StudentDeletedEvent;
 import com.educore.common.StudentUpdatedEvent;
-import com.stuman.analytics_service.entity.*;
+import com.educore.analytics.entity.*;
 import com.educore.analytics.exception.BaseException;
 import com.educore.analytics.repository.GradeCacheRepository;
 import com.educore.analytics.repository.StudentAnalyticsRepository;

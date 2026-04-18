@@ -13,6 +13,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -70,31 +72,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String username = jwtProvider.getUsernameFromToken(token);
 
             // Tránh set authentication nhiều lần
-            if (username != null &&
-                    SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                UserDetails userDetails =
-                        userDetailsService.loadUserByUsername(username);
+                // 1. Lấy danh sách roles trực tiếp từ Token (Tiết kiệm 1 lần gọi DB)
+                List<String> roles = jwtProvider.getRolesFromToken(token);
 
+                // 2. Chuyển String thành GrantedAuthority (Giữ nguyên ROLE_ADMIN từ bước 1)
+                List<org.springframework.security.core.authority.SimpleGrantedAuthority> authorities = roles.stream()
+                        .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new)
+                        .collect(Collectors.toList());
+
+                // 3. Tạo authentication mà không cần load lại UserDetails (Tối ưu cho Microservices)
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
+                        new UsernamePasswordAuthenticationToken(username, null, authorities);
 
-                authentication.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                SecurityContextHolder.getContext()
-                        .setAuthentication(authentication);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
             }
 
             filterChain.doFilter(request, response);
         } catch (Exception ex) {
-            // Log lỗi để dễ debug, tránh ném exception ra ngoài gây 500
-            ex.printStackTrace();
+            // Truyền trực tiếp đối tượng ex làm tham số thứ hai
+            logger.error("Cannot set user authentication: ", ex);
+            SecurityContextHolder.clearContext();
+            System.out.println("Path: " + request.getServletPath() + " - Auth: " + SecurityContextHolder.getContext().getAuthentication());
             filterChain.doFilter(request, response);
         }
     }

@@ -12,11 +12,7 @@ public class RoleAuthorizationFilter {
 
     private final ForbiddenHandler forbiddenHandler;
 
-    public Mono<Void> authorize(ServerWebExchange exchange, String requiredRole) {
-
-        String role = exchange.getRequest()
-                .getHeaders()
-                .getFirst("X-Role");
+    public Mono<Void> authorize(String role, String requiredRole, ServerWebExchange exchange) {
 
         if (role == null || !role.equals(requiredRole)) {
             return forbiddenHandler.handle(exchange, "Access denied: " + requiredRole + " only");
