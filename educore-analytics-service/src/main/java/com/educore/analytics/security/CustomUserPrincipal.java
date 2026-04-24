@@ -19,20 +19,30 @@ public class CustomUserPrincipal implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role)
+                .map(SimpleGrantedAuthority::new)
                 .toList();
     }
 
+    // ===== Helper =====
+    private boolean hasRole(String roleName) {
+        return roles.stream()
+                .anyMatch(role ->
+                        role.equals(roleName) || role.equals("ROLE_" + roleName)
+                );
+    }
+
+    // ===== Dùng =====
     public boolean isAdmin() {
-        return roles.contains("ADMIN");
+        return hasRole("ADMIN");
     }
 
     public boolean isTeacher() {
-        return roles.contains("TEACHER");
+        return hasRole("TEACHER");
     }
 
     public boolean isStudent() {
-        return roles.contains("STUDENT");
+        return hasRole("STUDENT");
     }
 
     @Override

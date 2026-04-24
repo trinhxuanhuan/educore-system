@@ -61,35 +61,35 @@ spring:
           predicates:
             - Path=/api/v1/analytics/**
 
-        # ================= SWAGGER ROUTES =================
+        # ================= SWAGGER ROUTES (FIX CHUẨN) =================
 
         - id: auth-docs
           uri: lb://auth-service
           predicates:
-            - Path=/v3/api-docs/auth
+            - Path=/v3/api-docs/auth/**
           filters:
-            - RewritePath=/v3/api-docs/auth, /v3/api-docs
+            - RewritePath=/v3/api-docs/auth(?<segment>/?.*), /v3/api-docs${segment}
 
         - id: student-docs
           uri: lb://student-service
           predicates:
-            - Path=/v3/api-docs/student
+            - Path=/v3/api-docs/student/**
           filters:
-            - RewritePath=/v3/api-docs/student, /v3/api-docs
+            - RewritePath=/v3/api-docs/student(?<segment>/?.*), /v3/api-docs${segment}
 
         - id: grade-docs
           uri: lb://grade-service
           predicates:
-            - Path=/v3/api-docs/grade
+            - Path=/v3/api-docs/grade/**
           filters:
-            - RewritePath=/v3/api-docs/grade, /v3/api-docs
+            - RewritePath=/v3/api-docs/grade(?<segment>/?.*), /v3/api-docs${segment}
 
         - id: analytics-docs
           uri: lb://analytics-service
           predicates:
-            - Path=/v3/api-docs/analytics
+            - Path=/v3/api-docs/analytics/**
           filters:
-            - RewritePath=/v3/api-docs/analytics, /v3/api-docs
+            - RewritePath=/v3/api-docs/analytics(?<segment>/?.*), /v3/api-docs${segment}
 
 # ================= EUREKA =================
 eureka:
@@ -126,7 +126,7 @@ logging:
 management:
   tracing:
     sampling:
-      probability: 1.0        # trace 100% request (dùng cho dev/demo)
+      probability: 1.0
   zipkin:
     tracing:
       endpoint: ${MANAGEMENT_ZIPKIN_TRACING_ENDPOINT:http://localhost:9411/api/v2/spans}
