@@ -1,11 +1,13 @@
 package com.educore.student.security;
 
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
+import java.util.Collections;
 import java.util.List;
 
 @Component
@@ -13,9 +15,11 @@ public class JwtProvider {
 
     @Value("${security.jwt.secret}")
     private String secretKey;
-    //Core
+
+    // ================= CORE =================
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(secretKey.getBytes());
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public Claims getClaims(String token) {
@@ -25,7 +29,8 @@ public class JwtProvider {
                 .parseClaimsJws(token)
                 .getBody();
     }
-    // Extract info
+
+    // ================= EXTRACT INFO =================
 
     public String getUsername(String token) {
         return getClaims(token).getSubject();
@@ -33,7 +38,15 @@ public class JwtProvider {
 
     @SuppressWarnings("unchecked")
     public List<String> getRoles(String token) {
-        return getClaims(token).get("roles", List.class);
+        Object roles = getClaims(token).get("roles");
+
+        if (roles instanceof List<?>) {
+            return ((List<?>) roles).stream()
+                    .map(Object::toString) // FIX QUAN TRỌNG
+                    .toList();
+        }
+
+        return Collections.emptyList();
     }
 
     public Long getUserId(String token) {
@@ -41,12 +54,14 @@ public class JwtProvider {
         return userId != null ? userId.longValue() : null;
     }
 
-    // Validate
+    // ================= VALIDATE =================
+
     public boolean validateToken(String token) {
         try {
             getClaims(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
+            System.out.println("JWT INVALID: " + e.getMessage()); // debug nhẹ
             return false;
         }
     }

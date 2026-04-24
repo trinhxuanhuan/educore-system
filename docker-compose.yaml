@@ -36,11 +36,6 @@ services:
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    healthcheck:
-      test: ["CMD", "bash", "-c", "nc -z localhost 9092"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
     networks:
       - educore-network
 
@@ -57,31 +52,23 @@ services:
     restart: always
     ports:
       - "8761:8761"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8761"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
     networks:
       - educore-network
 
   auth-service:
-    build: ./educore-auth-service # Kiểm tra lại tên folder thực tế của bạn
+    build: ./educore-auth-service
     container_name: auth-service
     restart: always
     depends_on:
       mysql:
-        condition: service_healthy # Chỉ chạy khi MySQL đã Healthcheck thành công
-      eureka-server:
         condition: service_healthy
+      eureka-server:
+        condition: service_started
     env_file:
-      - .env # Ép Docker đọc file .env
+      - .env
     environment:
-      - DB_USERNAME=${DB_USERNAME}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/auth_db?createDatabaseIfNotExist=true&useSSL=false
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/auth_db?createDatabaseIfNotExist=true&useSSL=false
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
     ports:
       - "8081:8081"
     networks:
@@ -94,14 +81,11 @@ services:
       - mysql
       - kafka
       - eureka-server
+    env_file:
+      - .env
     environment:
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-      EUREKA_SERVER: http://eureka-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/student_db
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
     ports:
       - "8082:8082"
     networks:
@@ -114,14 +98,11 @@ services:
       - mysql
       - kafka
       - eureka-server
+    env_file:
+      - .env
     environment:
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-      EUREKA_SERVER: http://eureka-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/grade_db
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
     ports:
       - "8083:8083"
     networks:
@@ -134,14 +115,11 @@ services:
       - mysql
       - kafka
       - eureka-server
+    env_file:
+      - .env
     environment:
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-      EUREKA_SERVER: http://eureka-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/analytics_db
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
     ports:
       - "8084:8084"
     networks:
@@ -152,13 +130,10 @@ services:
     restart: always
     depends_on:
       - eureka-server
-      - auth-service
-      - student-service
-      - grade-service
+    env_file:
+      - .env
     environment:
-      JWT_SECRET: ${JWT_SECRET}
-      EUREKA_SERVER: http://eureka-server:8761/eureka/
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
     ports:
       - "8080:8080"
     networks:
@@ -169,8 +144,10 @@ services:
     restart: unless-stopped
     depends_on:
       - api-gateway
+    env_file:
+      - .env
     environment:
-      VITE_API_BASE_URL: http://api-gateway:8080
+      VITE_API_BASE_URL: http://localhost:8080
     ports:
       - "3000:3000"
     networks:
