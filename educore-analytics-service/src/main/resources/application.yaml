@@ -34,7 +34,7 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: "com.stuman.common_event"
+        spring.json.trusted.packages: "com.educore.common"
         spring.json.use.type.headers: true
     listener:
       concurrency: 3
@@ -60,7 +60,7 @@ logging:
     root: INFO
     org.springframework.security: INFO
     org.springframework.kafka: DEBUG
-    com.stuman.analytics_service: DEBUG
+    com.educore.analytics: DEBUG
 
 springdoc:
   api-docs:
