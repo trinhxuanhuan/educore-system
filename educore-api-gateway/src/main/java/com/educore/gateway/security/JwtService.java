@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -43,19 +46,16 @@ public class JwtService {
         return extractAllClaims(token).getSubject();
     }
 
-    public String getRole(String token) {
-        var roles = extractAllClaims(token).get("roles", java.util.List.class);
+    public List<String> getRoles(String token) {
+        List<?> raw = extractAllClaims(token).get("roles", List.class);
 
-        if (roles == null || roles.isEmpty()) return null;
+        if (raw == null || raw.isEmpty()) return Collections.emptyList();
 
-        String role = roles.get(0).toString();
-
-        // bỏ ROLE_
-        if (role.startsWith("ROLE_")) {
-            role = role.substring(5);
-        }
-
-        return role;
+        return raw.stream()
+                .filter(Objects::nonNull)
+                .map(Object::toString)
+                .map(role -> role.startsWith("ROLE_") ? role.substring(5) : role)
+                .toList();
     }
 
     public Long getUserId(String token) {

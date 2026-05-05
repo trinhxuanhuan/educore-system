@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
@@ -43,16 +45,18 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         }
 
         Long userId = jwtService.getUserId(token);
-        String role = jwtService.getRole(token);
+        List<String> roles = jwtService.getRoles(token);
 
-        if (userId == null || role == null) {
+        if (userId == null || roles.isEmpty()) {
             return unauthorizedHandler.handle(exchange, "Invalid JWT payload");
         }
+
+        String rolesHeader = String.join(",", roles);
 
         ServerWebExchange mutated = exchange.mutate()
                 .request(builder -> builder
                         .header("X-User-Id", String.valueOf(userId))
-                        .header("X-Role", role)
+                        .header("X-Roles", rolesHeader)
                         .header(HttpHeaders.AUTHORIZATION, authHeader) // optional but GOOD PRACTICE
                 )
                 .build();
