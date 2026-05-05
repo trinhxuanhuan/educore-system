@@ -1,4 +1,5 @@
 package com.educore.auth.service.impl;
+import com.educore.auth.dto.request.ChangePasswordRequest;
 import com.educore.auth.dto.request.LoginRequest;
 import com.educore.auth.dto.request.RegisterRequest;
 import com.educore.auth.dto.response.AuthResponse;
@@ -67,6 +68,31 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
         UserInfoResponse userInfo = userMapper.toUserInfo(user);
-        return authMapper.toAuthResponse(jwt, userInfo);
+        return authMapper.toAuthResponse(jwt, userInfo, user.isPasswordChangeRequired());
+    }
+
+    /**
+     * Rotates the password for the currently authenticated user. The
+     * caller must supply their current password (defence in depth even
+     * when the JWT is valid) and a new one different from the current.
+     * On success the {@code passwordChangeRequired} flag is cleared so
+     * subsequent logins no longer prompt for rotation.
+     */
+    @Override
+    public void changePassword(String username, ChangePasswordRequest request) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new BaseException(ErrorCode.WRONG_CURRENT_PASSWORD);
+        }
+
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new BaseException(ErrorCode.NEW_PASSWORD_SAME_AS_OLD);
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setPasswordChangeRequired(false);
+        userRepository.save(user);
     }
 }

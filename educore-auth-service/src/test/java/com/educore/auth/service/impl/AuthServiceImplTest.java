@@ -117,10 +117,10 @@ class AuthServiceImplTest {
                 .email("huan@gmail.com")
                 .build();
 
-        AuthResponse expected = new AuthResponse("token", userInfo);
+        AuthResponse expected = new AuthResponse("token", userInfo, false);
 
         when(userMapper.toUserInfo(user)).thenReturn(userInfo);
-        when(authMapper.toAuthResponse("token", userInfo)).thenReturn(expected);
+        when(authMapper.toAuthResponse("token", userInfo, false)).thenReturn(expected);
 
         AuthResponse response = authService.register(request);
 
@@ -141,10 +141,10 @@ class AuthServiceImplTest {
         when(userRepository.findByUsername("huan")).thenReturn(Optional.of(user));
 
         UserInfoResponse userInfo = UserInfoResponse.builder().username("huan").build();
-        AuthResponse expected = new AuthResponse("token", userInfo);
+        AuthResponse expected = new AuthResponse("token", userInfo, false);
 
         when(userMapper.toUserInfo(user)).thenReturn(userInfo);
-        when(authMapper.toAuthResponse("token", userInfo)).thenReturn(expected);
+        when(authMapper.toAuthResponse("token", userInfo, false)).thenReturn(expected);
 
         AuthResponse response = authService.login(request);
 
@@ -162,5 +162,61 @@ class AuthServiceImplTest {
         when(userRepository.findByUsername("huan")).thenReturn(Optional.empty());
 
         assertThrows(BaseException.class, () -> authService.login(request));
+    }
+
+    // ================= CHANGE PASSWORD =================
+
+    @Test
+    void changePassword_shouldRotate_andClearFlag_whenInputIsValid() {
+        user.setPassword("encoded-old");
+        user.setPasswordChangeRequired(true);
+
+        com.educore.auth.dto.request.ChangePasswordRequest request =
+                new com.educore.auth.dto.request.ChangePasswordRequest();
+        request.setCurrentPassword("old-plain");
+        request.setNewPassword("new-plain-strong");
+
+        when(userRepository.findByUsername("huan")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("old-plain", "encoded-old")).thenReturn(true);
+        when(passwordEncoder.matches("new-plain-strong", "encoded-old")).thenReturn(false);
+        when(passwordEncoder.encode("new-plain-strong")).thenReturn("encoded-new");
+
+        authService.changePassword("huan", request);
+
+        assertEquals("encoded-new", user.getPassword());
+        assertFalse(user.isPasswordChangeRequired());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void changePassword_shouldThrow_whenCurrentPasswordIsWrong() {
+        user.setPassword("encoded-old");
+
+        com.educore.auth.dto.request.ChangePasswordRequest request =
+                new com.educore.auth.dto.request.ChangePasswordRequest();
+        request.setCurrentPassword("wrong-plain");
+        request.setNewPassword("new-plain-strong");
+
+        when(userRepository.findByUsername("huan")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("wrong-plain", "encoded-old")).thenReturn(false);
+
+        assertThrows(BaseException.class, () -> authService.changePassword("huan", request));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void changePassword_shouldThrow_whenNewPasswordSameAsCurrent() {
+        user.setPassword("encoded-old");
+
+        com.educore.auth.dto.request.ChangePasswordRequest request =
+                new com.educore.auth.dto.request.ChangePasswordRequest();
+        request.setCurrentPassword("same-plain");
+        request.setNewPassword("same-plain");
+
+        when(userRepository.findByUsername("huan")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("same-plain", "encoded-old")).thenReturn(true);
+
+        assertThrows(BaseException.class, () -> authService.changePassword("huan", request));
+        verify(userRepository, never()).save(any(User.class));
     }
 }

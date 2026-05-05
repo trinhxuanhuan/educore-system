@@ -49,6 +49,8 @@ public class SecurityConfig {
                         // LOGIN + REGISTER → cho phép
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
+                        // CHANGE PASSWORD → bất kỳ user đã xác thực nào
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/change-password").authenticated()
                         // ADMIN API → yêu cầu role ADMIN
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         // Các API khác → yêu cầu xác thực

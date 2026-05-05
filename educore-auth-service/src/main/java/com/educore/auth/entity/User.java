@@ -43,6 +43,10 @@ public class User {
     private boolean accountNonExpired = true;
     private boolean credentialsNonExpired = true;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean passwordChangeRequired = false;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
