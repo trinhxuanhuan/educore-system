@@ -21,4 +21,11 @@ jobs:
           java-version: '17'
 
       - name: Build & Test
+        env:
+          # Spring contexts in api-gateway/auth-service load `${JWT_SECRET}` at
+          # startup, so a value must be present for `mvn test` to pass. Use the
+          # repo secret if configured, otherwise fall back to a base64-encoded
+          # placeholder that is only used to satisfy the placeholder resolver
+          # during tests (never used to sign real tokens).
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'dGVzdC1zZWNyZXQta2V5LWZvci10ZXN0aW5nLW9ubHktbm90LWZvci1wcm9kdWN0aW9uLXVzZS0xMjM0NTY3OA==' }}
         run: mvn clean test
