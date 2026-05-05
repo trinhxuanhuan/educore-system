@@ -1,5 +1,9 @@
 package com.educore.analytics.controller;
 import com.educore.analytics.dto.StudentAnalyticsResponse;
+import com.educore.analytics.dto.StudentInternalResponse;
+import com.educore.analytics.exception.BaseException;
+import com.educore.analytics.exception.ErrorCode;
+import com.educore.analytics.integration.feign.StudentClient;
 import com.educore.analytics.security.CustomUserPrincipal;
 import com.educore.analytics.service.AnalyticsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,6 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AnalyticsController {
     private final AnalyticsService analyticsService;
+    private final StudentClient studentClient;
     // ================= ADMIN =================
     @Operation(summary = "Get analytics for all students (ADMIN only)")
     @GetMapping("/students")
@@ -47,7 +52,12 @@ public class AnalyticsController {
     public StudentAnalyticsResponse getMyAnalytics(
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        return analyticsService.getStudentAnalytics(principal.getUserId());
+        StudentInternalResponse student =
+                studentClient.getStudentByUserId(principal.getUserId());
+        if (student == null || student.getId() == null) {
+            throw new BaseException(ErrorCode.STUDENT_ANALYTICS_NOT_FOUND);
+        }
+        return analyticsService.getStudentAnalytics(student.getId());
     }
 
 }
