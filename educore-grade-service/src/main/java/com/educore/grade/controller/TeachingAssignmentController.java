@@ -62,7 +62,7 @@ public class TeachingAssignmentController {
 
     @Operation(summary = "Get assignments by teacher ID (ADMIN or the teacher)")
     @GetMapping("/teacher/{teacherId}")
-    @PreAuthorize("hasRole('ADMIN') or #teacherId == authentication.principal.id")
+    @PreAuthorize("hasRole('ADMIN') or #teacherId == authentication.principal.userId")
     public ResponseEntity<List<TeachingAssignmentResponse>> getByTeacher(
             @PathVariable Long teacherId
     ) {
