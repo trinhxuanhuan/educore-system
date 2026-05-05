@@ -7,6 +7,7 @@ import com.educore.auth.repository.UserRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -17,6 +18,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 public class JwtProvider {
 
@@ -35,8 +37,6 @@ public class JwtProvider {
     // ================= CORE =================
 
     private Key getSigningKey() {
-        System.out.println("JWT SECRET: " + jwtSecret); // 👈 THÊM Ở ĐÂY
-
         byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
@@ -99,8 +99,7 @@ public class JwtProvider {
             getClaims(token);
             return true;
         } catch (Exception ex) {
-            // In thẳng ra console của Docker để xem nó bị gì (Hết hạn? Sai chữ ký?)
-            System.out.println("DEBUG JWT: Token không hợp lệ do: " + ex.getMessage());
+            log.warn("Invalid JWT token: {}", ex.getMessage());
             return false;
         }
     }

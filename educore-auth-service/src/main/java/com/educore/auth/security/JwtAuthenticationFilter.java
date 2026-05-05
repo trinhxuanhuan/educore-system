@@ -93,10 +93,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             filterChain.doFilter(request, response);
         } catch (Exception ex) {
-            // Truyền trực tiếp đối tượng ex làm tham số thứ hai
-            logger.error("Cannot set user authentication: ", ex);
+            logger.error("Cannot set user authentication for path " + request.getServletPath(), ex);
             SecurityContextHolder.clearContext();
-            System.out.println("Path: " + request.getServletPath() + " - Auth: " + SecurityContextHolder.getContext().getAuthentication());
             filterChain.doFilter(request, response);
         }
     }
