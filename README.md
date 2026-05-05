@@ -26,7 +26,7 @@
                           │         API Gateway           │
                           │  (Spring Cloud Gateway)       │
                           │  • JWT Validation             │
-                          │  • Role-based Authorization   │
+                          │  • Identity Header Propagation│
                           │  • Request Routing            │
                           └──┬──────┬──────┬──────┬──────┘
                              │      │      │      │
@@ -90,8 +90,8 @@
 ### 🌐 API Gateway
 - Single entry point for all client requests
 - **JWT validation** at the gateway level before forwarding to downstream services
-- **Role-based route authorization** — ADMIN-only routes, TEACHER-only routes, etc.
-- Custom `ForbiddenHandler` and `UnauthorizedHandler` for clean error responses
+- **Identity propagation** — gateway extracts the authenticated user from the JWT and forwards `X-User-Id` and `X-Role` headers to downstream services; role-based authorization (`@PreAuthorize`) is enforced at each domain service
+- Custom `UnauthorizedHandler` for clean JSON error responses on missing / invalid tokens
 - `RouteValidator` for public vs. protected route management
 
 ### 🔍 Eureka Server
