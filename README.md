@@ -59,7 +59,8 @@
 ### 🔐 Auth Service
 - User registration and login with **JWT** access tokens
 - **Role-based access control** (ADMIN, TEACHER, STUDENT)
-- Auto-initialization of default roles and admin account on startup
+- Auto-initialization of default roles on startup
+- Bootstrap of an initial **admin account** from environment variables on first run, with a forced password rotation on first login (`POST /api/v1/auth/change-password`)
 - Internal API for inter-service user lookups
 - Secured with **Spring Security** + custom `JwtAuthenticationFilter`
 
@@ -190,9 +191,22 @@ Request → API Gateway (JWT Validation + Role Check) → Microservice (JWT Re-v
 git clone https://github.com/trinhxuanhuan/educore-system.git
 cd educore-system
 
+# Configure environment (DB password, JWT secret, initial admin password)
+cp .env.example .env
+# then edit .env and set ADMIN_INIT_PASSWORD to a strong value of your own
+
 # Start all services
 docker-compose up --build
 ```
+
+> **First-run admin bootstrap.** On the very first startup `educore-auth-service`
+> reads `ADMIN_USERNAME`, `ADMIN_EMAIL` and `ADMIN_INIT_PASSWORD` from the
+> environment and creates a single admin user. `ADMIN_INIT_PASSWORD` has no
+> default — the service will refuse to start if it is missing while no admin
+> exists yet. The created admin is flagged for forced password rotation; the
+> first login response carries `passwordChangeRequired: true`, and the admin
+> must call `POST /api/v1/auth/change-password` before continuing. After the
+> admin row exists these variables are ignored on subsequent boots.
 
 This will start:
 
@@ -264,6 +278,7 @@ This ensures every push and pull request is validated before merging.
 |---|---|---|---|
 | `POST` | `/api/auth/register` | Public | Register new user |
 | `POST` | `/api/auth/login` | Public | Login and receive JWT |
+| `POST` | `/api/auth/change-password` | Authenticated | Rotate the current user's password (clears `passwordChangeRequired`) |
 | `GET` | `/api/users/me` | Authenticated | Get current user info |
 | `POST` | `/api/admin/assign-role` | ADMIN | Assign role to user |
 
@@ -301,7 +316,7 @@ This ensures every push and pull request is validated before merging.
 - **`common-event` module** — Shared Kafka event DTOs are extracted into a dedicated Maven module, ensuring schema consistency across producer and consumer services without code duplication.
 - **MapStruct** — Used for compile-time, type-safe object mapping between entities and DTOs, avoiding runtime reflection overhead.
 - **JPA Specifications** — Implemented in `grade-service` for dynamic, composable query filtering.
-- **DataInitializer / RoleInitializer / AdminInitializer** — Ensures the system is ready to use immediately after startup with default roles and an admin account.
+- **DataInitializer / RoleInitializer / AdminInitializer** — Bootstraps default roles and an environment-driven admin account on startup, with a forced password rotation on first login so credentials are never hard-coded in source.
 - **Internal Controllers** — Dedicated `InternalController` endpoints (e.g. `StudentInternalController`, `InternalUserController`) are used for service-to-service communication, keeping public and internal APIs cleanly separated.
 
 ---

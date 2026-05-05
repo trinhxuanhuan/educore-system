@@ -28,6 +28,16 @@ security:
     secret: ${JWT_SECRET}
     expiration: 86400000
 
+# Bootstrap a single admin user on first startup. ADMIN_INIT_PASSWORD is
+# REQUIRED on first boot (when no admin row exists). It is intentionally
+# left without a default so deployments cannot accidentally ship with a
+# well-known password.
+admin:
+  init:
+    username: ${ADMIN_USERNAME:admin}
+    email: ${ADMIN_EMAIL:admin@educore.local}
+    password: ${ADMIN_INIT_PASSWORD:}
+
 springdoc:
   api-docs:
     path: /v3/api-docs

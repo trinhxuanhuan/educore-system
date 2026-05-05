@@ -1,5 +1,6 @@
 package com.educore.auth.controller;
 
+import com.educore.auth.dto.request.ChangePasswordRequest;
 import com.educore.auth.dto.request.LoginRequest;
 import com.educore.auth.dto.request.RegisterRequest;
 import com.educore.auth.dto.response.ApiResponse;
@@ -10,6 +11,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.security.Principal;
 
 @Tag(name = "Auth API", description = "Authentication operations")
 @RestController
@@ -50,6 +53,22 @@ public class AuthController {
                         .code("SUCCESS")
                         .message("Login successful")
                         .data(response)
+                        .build()
+        );
+    }
+
+    @Operation(summary = "Change password of the currently authenticated user")
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            Principal principal,
+            @Valid @RequestBody ChangePasswordRequest request) {
+
+        authService.changePassword(principal.getName(), request);
+
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .code("SUCCESS")
+                        .message("Password changed successfully")
                         .build()
         );
     }

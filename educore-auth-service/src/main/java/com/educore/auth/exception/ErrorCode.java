@@ -44,6 +44,18 @@ public enum ErrorCode {
             HttpStatus.FORBIDDEN
     ),
 
+    WRONG_CURRENT_PASSWORD(
+            "AUTH_400_PASSWORD",
+            "Current password is incorrect",
+            HttpStatus.BAD_REQUEST
+    ),
+
+    NEW_PASSWORD_SAME_AS_OLD(
+            "AUTH_400_PASSWORD_SAME",
+            "New password must differ from the current one",
+            HttpStatus.BAD_REQUEST
+    ),
+
     // ===== COMMON =====
     VALIDATION_ERROR(
             "COMMON_400_VALIDATION",

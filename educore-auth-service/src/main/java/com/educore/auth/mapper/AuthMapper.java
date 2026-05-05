@@ -10,5 +10,6 @@ public interface AuthMapper {
 
     @Mapping(target = "accessToken", source = "token")
     @Mapping(target = "user", source = "user")
-    AuthResponse toAuthResponse(String token, UserInfoResponse user);
+    @Mapping(target = "passwordChangeRequired", source = "passwordChangeRequired")
+    AuthResponse toAuthResponse(String token, UserInfoResponse user, boolean passwordChangeRequired);
 }
