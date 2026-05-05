@@ -3,11 +3,13 @@ package com.educore.gateway.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
 
+@Slf4j
 @Service
 public class JwtService {
 
@@ -31,9 +33,8 @@ public class JwtService {
         try {
             extractAllClaims(token);
             return true;
-        }catch (Exception e) {
-            System.out.println("JWT ERROR: " + e.getMessage());
-            e.printStackTrace();
+        } catch (Exception e) {
+            log.warn("Invalid JWT token: {}", e.getMessage());
             return false;
         }
     }
