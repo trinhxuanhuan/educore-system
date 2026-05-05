@@ -114,6 +114,7 @@
 | Security | Spring Security + JWT (JJWT) |
 | Persistence | Spring Data JPA + Hibernate |
 | Database | MySQL |
+| Schema Migrations | Flyway (versioned, per service) |
 | Object Mapping | MapStruct |
 | API Documentation | SpringDoc OpenAPI (Swagger UI) |
 | Containerization | Docker + Docker Compose |
@@ -318,6 +319,7 @@ This ensures every push and pull request is validated before merging.
 - **JPA Specifications** — Implemented in `grade-service` for dynamic, composable query filtering.
 - **DataInitializer / RoleInitializer / AdminInitializer** — Bootstraps default roles and an environment-driven admin account on startup, with a forced password rotation on first login so credentials are never hard-coded in source.
 - **Internal Controllers** — Dedicated `InternalController` endpoints (e.g. `StudentInternalController`, `InternalUserController`) are used for service-to-service communication, keeping public and internal APIs cleanly separated.
+- **Flyway-managed schema** — Each persistent service (`auth`, `student`, `grade`, `analytics`) ships its own versioned migrations under `src/main/resources/db/migration`. Hibernate runs in `validate` mode at startup so any drift between the JPA entity model and the migrated schema fails fast instead of silently auto-altering the database. `baseline-on-migrate=true` lets the migrations adopt legacy databases that were previously created by `ddl-auto=update`.
 
 ---
 
